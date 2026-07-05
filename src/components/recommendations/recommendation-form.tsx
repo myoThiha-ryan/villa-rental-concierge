@@ -145,7 +145,12 @@ export function RecommendationForm({ propertyId, recommendation }: Recommendatio
                 onValueChange={(v) => update("category_id", v ?? "")}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
+                  <SelectValue placeholder="Select a category">
+                    {(value: string | null) => {
+                      const c = categories.find((c) => c.id === value);
+                      return c ? `${c.icon} ${c.name}` : "Select a category";
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => (

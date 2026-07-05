@@ -81,7 +81,11 @@ export function KbEntryForm({ propertyId }: { propertyId: string }) {
               <Label>Type</Label>
               <Select value={sourceType} onValueChange={(v) => setSourceType(v ?? "manual_entry")}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                    {(value: string | null) =>
+                      SOURCE_TYPES.find((t) => t.value === value)?.label ?? value
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {SOURCE_TYPES.map((t) => (

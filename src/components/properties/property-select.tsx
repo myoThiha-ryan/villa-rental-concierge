@@ -28,10 +28,16 @@ export function PropertySelect({
     router.push(`${pathname}?${params.toString()}`);
   }
 
+  const nameById = new Map(properties.map((p) => [p.id, p.name]));
+
   return (
     <Select value={selectedId} onValueChange={handleChange}>
       <SelectTrigger className="w-64">
-        <SelectValue placeholder="Select a property" />
+        <SelectValue placeholder="Select a property">
+          {(value: string | null) =>
+            value ? nameById.get(value) ?? "Select a property" : "Select a property"
+          }
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {properties.map((p) => (

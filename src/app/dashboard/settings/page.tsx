@@ -1,9 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { PropertySelect } from "@/components/properties/property-select";
 import { TestChat } from "@/components/conversations/test-chat";
+import { ReplyModeToggle } from "@/components/properties/reply-mode-toggle";
+import { IcalSettings } from "@/components/properties/ical-settings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { Property } from "@/types/database";
+import type { Property, ScheduledMessage } from "@/types/database";
+
+const TEMPLATE_LABELS: Record<string, string> = {
+  pre_arrival: "Pre-arrival welcome",
+  checkout_reminder: "Checkout reminder",
+  review_request: "Review request",
+};
 
 export default async function SettingsPage({
   searchParams,
@@ -20,6 +28,18 @@ export default async function SettingsPage({
 
   const activeProperty =
     (properties?.find((p) => p.id === property_id) ?? properties?.[0]) as Property | undefined;
+
+  let upcoming: ScheduledMessage[] = [];
+  if (activeProperty) {
+    const { data } = await supabase
+      .from("scheduled_messages")
+      .select("*")
+      .eq("property_id", activeProperty.id)
+      .eq("status", "pending")
+      .order("send_at", { ascending: true })
+      .limit(8);
+    upcoming = (data ?? []) as ScheduledMessage[];
+  }
 
   const webhookUrl =
     (process.env.NEXT_PUBLIC_APP_URL ?? "https://your-domain.com") + "/api/webhooks/whatsapp";
@@ -40,6 +60,43 @@ export default async function SettingsPage({
       ) : (
         <>
           <PropertySelect properties={properties as Property[]} selectedId={activeProperty?.id} />
+
+          {activeProperty && (
+            <ReplyModeToggle
+              key={`mode-${activeProperty.id}`}
+              propertyId={activeProperty.id}
+              mode={activeProperty.reply_mode ?? "auto"}
+            />
+          )}
+
+          {activeProperty && (
+            <IcalSettings
+              key={`ical-${activeProperty.id}`}
+              propertyId={activeProperty.id}
+              icalUrl={activeProperty.ical_url ?? null}
+            />
+          )}
+
+          {upcoming.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Upcoming automated messages</CardTitle>
+                <CardDescription>
+                  Scheduled from synced bookings. Sent to guests who have messaged your WhatsApp.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {upcoming.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between gap-3">
+                    <span>{TEMPLATE_LABELS[m.template_key] ?? m.template_key}</span>
+                    <span className="text-muted-foreground">
+                      {new Date(m.send_at).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

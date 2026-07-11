@@ -16,7 +16,13 @@ export const propertySchema = z.object({
   whatsapp_business_account_id: z.string().max(200).optional().nullable(),
   welcome_message: z.string().max(2000).optional().nullable(),
   ai_personality: z.string().max(2000).optional().nullable(),
+  reply_mode: z.enum(["auto", "draft"]).optional(),
+  ical_url: z.string().url().max(1000).optional().nullable().or(z.literal("")),
   active: z.boolean().default(true),
+});
+
+export const draftActionSchema = z.object({
+  content: z.string().min(1).max(4000).optional(),
 });
 
 export const recommendationSchema = z.object({
@@ -49,6 +55,11 @@ export const knowledgeBaseEntrySchema = z.object({
   title: z.string().max(300).optional().nullable(),
   content: z.string().min(1).max(20000),
   active: z.boolean().default(true),
+});
+
+export const houseManualSchema = z.object({
+  property_id: z.string().uuid(),
+  sections: z.record(z.string(), z.string().max(5000)),
 });
 
 export const chatQuerySchema = z.object({

@@ -5,6 +5,7 @@ export type EscalationReason =
   | "complaint"
   | "low_confidence"
   | "human_requested"
+  | "booking_request"
   | null;
 
 const EMERGENCY_KEYWORDS = [
@@ -22,6 +23,19 @@ const HUMAN_KEYWORDS = [
 const ANGER_KEYWORDS = [
   "unacceptable", "refund", "terrible", "awful", "disgusting", "worst",
   "furious", "angry", "complaint", "complain", "scam", "ripoff", "rip off",
+];
+
+// Money and booking changes the assistant must never handle itself — it hands
+// these to the host rather than quoting prices or altering reservations.
+const BOOKING_KEYWORDS = [
+  "cancel my booking", "cancel my reservation", "cancel the booking", "cancel my stay",
+  "change my dates", "change the dates", "change my booking", "modify my booking",
+  "modify my reservation", "reschedule my", "move my booking",
+  "extend my stay", "extra night", "one more night", "another night", "stay longer",
+  "late checkout", "late check-out", "early check-in", "early check in",
+  "check in early", "check out late",
+  "extra charge", "extra fee", "invoice", "receipt", "pay extra",
+  "additional payment", "my deposit", "get my deposit",
 ];
 
 const LOW_CONFIDENCE_THRESHOLD = 0.4;
@@ -53,6 +67,15 @@ export function detectEscalation(
       reason: "human_requested",
       guestMessage:
         "Of course — I've passed your message to the host and they'll get back to you shortly. 😊",
+    };
+  }
+
+  if (containsAny(lower, BOOKING_KEYWORDS)) {
+    return {
+      shouldEscalate: true,
+      reason: "booking_request",
+      guestMessage:
+        "That's something the host takes care of directly — I've let them know and they'll sort it out for you. 😊 Is there anything else I can help with in the meantime?",
     };
   }
 

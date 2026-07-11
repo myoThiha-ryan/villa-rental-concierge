@@ -47,4 +47,32 @@ describe("detectEscalation", () => {
     const d = detectEscalation("this is terrible, someone is injured", cls({ intent: "complaint" }));
     expect(d.reason).toBe("emergency");
   });
+
+  it("escalates booking-change requests instead of handling them", () => {
+    for (const msg of [
+      "can I extend my stay by one more night?",
+      "I need to change my dates",
+      "please cancel my booking",
+      "is late checkout possible?",
+    ]) {
+      const d = detectEscalation(msg, cls());
+      expect(d.shouldEscalate).toBe(true);
+      expect(d.reason).toBe("booking_request");
+    }
+  });
+
+  it("escalates payment/invoice requests", () => {
+    const d = detectEscalation("can you send me an invoice for the extra charge?", cls());
+    expect(d.reason).toBe("booking_request");
+  });
+
+  it("does not misfire on unrelated 'cancel' (e.g. a dinner reservation)", () => {
+    const d = detectEscalation("should I cancel my dinner reservation if it rains?", cls());
+    expect(d.shouldEscalate).toBe(false);
+  });
+
+  it("still treats refunds as complaints", () => {
+    const d = detectEscalation("I want a refund, this is unacceptable", cls());
+    expect(d.reason).toBe("complaint");
+  });
 });

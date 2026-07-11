@@ -51,6 +51,11 @@ export const knowledgeBaseEntrySchema = z.object({
   active: z.boolean().default(true),
 });
 
+export const houseManualSchema = z.object({
+  property_id: z.string().uuid(),
+  sections: z.record(z.string(), z.string().max(5000)),
+});
+
 export const chatQuerySchema = z.object({
   property_id: z.string().uuid(),
   conversation_id: z.string().uuid().optional(),

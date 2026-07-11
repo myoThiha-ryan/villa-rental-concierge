@@ -14,6 +14,7 @@ const reasonLabel: Record<string, string> = {
   complaint: "😠 Complaint",
   low_confidence: "❓ Low confidence",
   human_requested: "🙋 Human requested",
+  booking_request: "📅 Booking / payment",
 };
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {

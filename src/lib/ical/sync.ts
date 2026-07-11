@@ -35,10 +35,26 @@ export async function syncPropertyCalendar(
   let scheduled = 0;
 
   for (const ev of reservations) {
-    const { data: booking, error } = await supabase
+    // Find-then-write (rather than ON CONFLICT) so this works with the partial
+    // unique index and stays idempotent across re-syncs.
+    const { data: existing } = await supabase
       .from("bookings")
-      .upsert(
-        {
+      .select("id")
+      .eq("property_id", property.id)
+      .eq("external_uid", ev.uid)
+      .maybeSingle();
+
+    let bookingId: string;
+    if (existing) {
+      bookingId = existing.id;
+      await supabase
+        .from("bookings")
+        .update({ check_in: ev.start, check_out: ev.end, status: "confirmed" })
+        .eq("id", bookingId);
+    } else {
+      const { data: inserted, error } = await supabase
+        .from("bookings")
+        .insert({
           property_id: property.id,
           check_in: ev.start,
           check_out: ev.end,
@@ -46,16 +62,19 @@ export async function syncPropertyCalendar(
           source: "airbnb_ical",
           external_uid: ev.uid,
           external_id: ev.uid,
-        },
-        { onConflict: "property_id,external_uid" }
-      )
-      .select("id")
-      .single();
-    if (error || !booking) continue;
+        })
+        .select("id")
+        .single();
+      if (error || !inserted) {
+        console.error(`Failed to insert booking ${ev.uid}`, error?.message);
+        continue;
+      }
+      bookingId = inserted.id;
+    }
     bookingsUpserted++;
 
     scheduled += await scheduleLifecycleForBooking(supabase, property, {
-      id: booking.id,
+      id: bookingId,
       checkIn: ev.start,
       checkOut: ev.end,
     });
@@ -88,8 +107,16 @@ export async function scheduleLifecycleForBooking(
   );
 
   const now = Date.now();
+
+  // Skip templates already scheduled for this booking so re-syncs don't dupe.
+  const { data: existing } = await supabase
+    .from("scheduled_messages")
+    .select("template_key")
+    .eq("booking_id", booking.id);
+  const have = new Set((existing ?? []).map((r) => r.template_key));
+
   const rows = items
-    .filter((it) => new Date(it.sendAt).getTime() > now)
+    .filter((it) => new Date(it.sendAt).getTime() > now && !have.has(it.templateKey))
     .map((it) => ({
       property_id: property.id,
       booking_id: booking.id,
@@ -102,10 +129,7 @@ export async function scheduleLifecycleForBooking(
 
   if (rows.length === 0) return 0;
 
-  // Ignore duplicates (uq on booking_id + template_key).
-  const { error } = await supabase
-    .from("scheduled_messages")
-    .upsert(rows, { onConflict: "booking_id,template_key", ignoreDuplicates: true });
+  const { error } = await supabase.from("scheduled_messages").insert(rows);
   if (error) throw new Error(error.message);
 
   return rows.length;

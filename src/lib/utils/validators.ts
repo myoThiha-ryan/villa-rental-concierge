@@ -17,6 +17,7 @@ export const propertySchema = z.object({
   welcome_message: z.string().max(2000).optional().nullable(),
   ai_personality: z.string().max(2000).optional().nullable(),
   reply_mode: z.enum(["auto", "draft"]).optional(),
+  ical_url: z.string().url().max(1000).optional().nullable().or(z.literal("")),
   active: z.boolean().default(true),
 });
 

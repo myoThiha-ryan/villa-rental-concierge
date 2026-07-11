@@ -35,6 +35,7 @@ export interface Property {
   welcome_message: string | null;
   ai_personality: string | null;
   reply_mode: "auto" | "draft";
+  ical_url: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -56,15 +57,30 @@ export interface Guest {
 export interface Booking {
   id: string;
   property_id: string;
-  guest_id: string;
+  guest_id: string | null;
   check_in: string;
   check_out: string;
   num_guests: number | null;
   status: BookingStatus;
   source: string | null;
   external_id: string | null;
+  external_uid: string | null;
+  guest_name: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ScheduledMessage {
+  id: string;
+  property_id: string;
+  booking_id: string | null;
+  guest_id: string | null;
+  template_key: string;
+  body: string;
+  send_at: string;
+  status: "pending" | "sent" | "skipped" | "cancelled";
+  sent_at: string | null;
+  created_at: string;
 }
 
 export interface RecommendationCategory {

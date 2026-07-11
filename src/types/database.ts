@@ -34,6 +34,7 @@ export interface Property {
   whatsapp_business_account_id: string | null;
   welcome_message: string | null;
   ai_personality: string | null;
+  reply_mode: "auto" | "draft";
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -151,6 +152,7 @@ export interface Message {
   confidence: number | null;
   retrieved_context: Record<string, unknown> | null;
   tokens_used: Record<string, unknown> | null;
+  status: "draft" | "sent" | "discarded";
   created_at: string;
 }
 

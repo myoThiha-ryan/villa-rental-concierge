@@ -16,7 +16,12 @@ export const propertySchema = z.object({
   whatsapp_business_account_id: z.string().max(200).optional().nullable(),
   welcome_message: z.string().max(2000).optional().nullable(),
   ai_personality: z.string().max(2000).optional().nullable(),
+  reply_mode: z.enum(["auto", "draft"]).optional(),
   active: z.boolean().default(true),
+});
+
+export const draftActionSchema = z.object({
+  content: z.string().min(1).max(4000).optional(),
 });
 
 export const recommendationSchema = z.object({

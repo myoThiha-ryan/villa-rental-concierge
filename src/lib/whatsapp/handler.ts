@@ -130,13 +130,18 @@ export async function handleInboundMessage({
     };
   }
 
-  // 7. Persist the assistant reply.
+  // In co-pilot mode the host reviews replies before they go out. Escalations
+  // always send immediately (safety) so the guest is never left waiting.
+  const shouldDraft = prop.reply_mode === "draft" && !result.escalated;
+
+  // 7. Persist the assistant reply (as a pending draft in co-pilot mode).
   await supabase.from("messages").insert({
     conversation_id: conversationId,
     role: "assistant",
     content: result.reply,
     intent: result.intent,
     confidence: result.confidence,
+    status: shouldDraft ? "draft" : "sent",
     retrieved_context: result.retrieval
       ? { recommendations: result.retrieval.recommendations.map((r) => r.name) }
       : null,
@@ -169,12 +174,13 @@ export async function handleInboundMessage({
     });
   }
 
-  await logEvent(supabase, prop.id, conversationId, "message_sent", {
+  await logEvent(supabase, prop.id, conversationId, shouldDraft ? "reply_drafted" : "message_sent", {
     intent: result.intent,
     recommendation_count: result.retrieval?.recommendations.length ?? 0,
   });
 
-  // 10. Send the reply via WhatsApp.
+  // 10. Send the reply via WhatsApp — unless it's held for host approval.
+  if (shouldDraft) return;
   try {
     await sendWhatsAppText({ phoneNumberId, to: from, body: result.reply });
   } catch (err) {

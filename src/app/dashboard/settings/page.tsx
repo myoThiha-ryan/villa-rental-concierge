@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PropertySelect } from "@/components/properties/property-select";
 import { TestChat } from "@/components/conversations/test-chat";
+import { ReplyModeToggle } from "@/components/properties/reply-mode-toggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Property } from "@/types/database";
@@ -40,6 +41,14 @@ export default async function SettingsPage({
       ) : (
         <>
           <PropertySelect properties={properties as Property[]} selectedId={activeProperty?.id} />
+
+          {activeProperty && (
+            <ReplyModeToggle
+              key={activeProperty.id}
+              propertyId={activeProperty.id}
+              mode={activeProperty.reply_mode ?? "auto"}
+            />
+          )}
 
           <Card>
             <CardHeader>
